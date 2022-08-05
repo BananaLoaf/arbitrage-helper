@@ -8,10 +8,26 @@ from arbitrage_helper.currency import *
 
 
 class BPM(Enum):  # Binance Payment Method
-    All = None
+    All = "All"
+
+    ################################################################
+    # RUB Russia
     Tinkoff = "Tinkoff"
     RosBank = "RosBank"
+    RaiffeisenBankRussia = "RaiffeisenBankRussia"
+    QIWI = "QIWI"
+    YandexMoney = "YandexMoney"
+    ABank = "ABank"
     RUBfiatbalance = "RUBfiatbalance"
+    PostBankRussia = "PostBankRussia"
+    MTSBank = "MTSBank"
+    HomeCreditBank = "HomeCreditBank"
+    Payeer = "Payeer"
+    Advcash = "Advcash"
+    RenaissanceCredit = "RenaissanceCredit"
+    BankSaintPetersburg = "BankSaintPetersburg"
+    RussianStandardBank = "RussianStandardBank"
+
     Paysend = "Paysend"
     Uzcard = "Uzcard"
     Humo = "Humo"

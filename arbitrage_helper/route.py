@@ -2,6 +2,7 @@ from typing import *
 import itertools
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import random
+from copy import deepcopy
 
 from tqdm import tqdm
 
@@ -69,53 +70,82 @@ class RouteGenerator:
         nodes = {}
 
         nodes.update(self.get_binance_spot(crypto=crypto))
+        nodes.update(self.get_cryptology(crypto=crypto))
+        nodes.update(self.get_garantex(crypto=crypto))
 
-        for payment_method in [BPM.RosBank, BPM.Tinkoff]:
+        ################################################################
+        # Russia
+        main_methods = [BPM.Tinkoff, BPM.RosBank, BPM.RaiffeisenBankRussia, BPM.QIWI, BPM.PostBankRussia]
+        minor_methods = [BPM.YandexMoney, BPM.ABank, BPM.MTSBank, BPM.HomeCreditBank,
+                         BPM.RenaissanceCredit, BPM.BankSaintPetersburg, BPM.RussianStandardBank]
+        unusable_methods = [BPM.Payeer, BPM.Advcash]
+
+        nodes.update(self.get_binance_p2p_russia(crypto=crypto, payment_method=main_methods,
+                                                 custom_method_name="MainBanks"))
+        nodes.update(self.get_binance_p2p_russia(crypto=crypto, payment_method=minor_methods,
+                                                 custom_method_name="MinorBanks"))
+        nodes.update(self.get_binance_p2p_russia(crypto=crypto, payment_method=unusable_methods))
+
+        for payment_method in main_methods + minor_methods + unusable_methods:
             nodes.update(self.get_binance_p2p_russia(crypto=crypto, payment_method=payment_method))
         # self.nodes.update(self.get_binance_p2p_russia(crypto=crypto, payment_method=BPM.RUBfiatbalance))  # TODO
 
+        ################################################################
+        # Kazakhstan
         nodes.update(self.get_binance_p2p_kazakhstan(crypto=crypto, payment_method=BPM.JysanBank))
 
+        ################################################################
+        # Indonesia
         for payment_method in [BPM.PermataMe, BPM.BankTransfer]:
             nodes.update(self.get_binance_p2p_indonesia(crypto=crypto, payment_method=payment_method))
 
+        ################################################################
+        # Uzbekistan
         for payment_method in [BPM.Paysend, BPM.Uzcard, BPM.Kapitalbank, BPM.Tinkoff, BPM.BankTransfer]:
             nodes.update(self.get_binance_p2p_uzbekistan(crypto=crypto, payment_method=payment_method))
 
+        ################################################################
         nodes.update(self.get_tinkoff_bank())
         nodes.update(self.get_paysera())
         nodes.update(self.get_paysend())
         nodes.update(self.get_vexel(crypto=crypto))
         nodes.update(self.get_vexel_utils())
-        nodes.update(self.get_garantex(crypto=crypto))
         nodes.update(self.get_moex())
         nodes.update(self.get_kase())
-        nodes.update(self.get_cryptology(crypto=crypto))
 
         return nodes
 
-    def parse_nodes(self, nodes: Dict[str, GenericNode], workers: int = 10) -> Dict[str, GenericNode]:
-        with tqdm(desc="Parsing nodes", total=len(nodes)) as pbar:
-            with ThreadPoolExecutor(max_workers=workers) as ex:
-                def wrapped(node):
-                    node.parse()
+    def parse_nodes(self, nodes: Dict[str, GenericNode], workers: int = 10,
+                    filter_invalid: bool = True, progress_bar: bool = False) -> Dict[str, GenericNode]:
+        nodes_clone = deepcopy(nodes)
+
+        if progress_bar:
+            pbar = tqdm(desc="Parsing nodes", total=len(nodes_clone))
+
+        with ThreadPoolExecutor(max_workers=workers) as ex:
+            def wrapped(node):
+                node.parse()
+                if progress_bar:
                     pbar.update(1)
 
-                node_keys = list(nodes.keys())
-                random.shuffle(node_keys)
-                for node_key in node_keys:
-                    ex.submit(wrapped, nodes[node_key])
+            node_keys = list(nodes_clone.keys())
+            random.shuffle(node_keys)
+            for node_key in node_keys:
+                ex.submit(wrapped, nodes_clone[node_key])
 
-        # Filter unchanged nodes
-        empty_nodes = []
-        for alias, node in nodes.items():
-            if node.invalid:
-                empty_nodes.append(alias)
+        if progress_bar:
+            pbar.close()
 
-        for alias in empty_nodes:
-            del nodes[alias]
+        if filter_invalid:
+            # Filter unchanged nodes
+            empty_nodes = []
+            for alias, node in nodes_clone.items():
+                if node.invalid:
+                    empty_nodes.append(alias)
+            for alias in empty_nodes:
+                del nodes_clone[alias]
 
-        return nodes
+        return nodes_clone
 
     def dumbgen_loop_routes(self, nodes: Dict[str, GenericNode], size: int, currency: CEnum) -> List[Route]:
         routes = []
@@ -200,17 +230,23 @@ class RouteGenerator:
                  Paysend_UZSKZT()]
         return {node.repr: node for node in nodes}
 
-    def get_binance_p2p_russia(self, crypto: bool, payment_method: BPM):
-        nodes = {}
+    def get_binance_p2p_russia(self, crypto: bool, payment_method: Union[Iterable[BPM], BPM],
+                               custom_method_name: Optional[str] = None) -> Dict[str, GenericNode]:
+        nodes = [
+            BinanceP2P(base=Stable.USDT, quote=Fiat.RUB, payment_method=payment_method, custom_method_name=custom_method_name),
+            BinanceP2P(base=Stable.BUSD, quote=Fiat.RUB, payment_method=payment_method, custom_method_name=custom_method_name),
+            BinanceP2P(base=BinanceFiat.RUB, quote=Fiat.RUB, payment_method=payment_method, custom_method_name=custom_method_name),
+        ]
 
-        symbols = [Stable.USDT, Stable.BUSD, BinanceFiat.RUB]
-        if crypto: symbols += [Crypto.BTC, Crypto.BNB, Crypto.ETH, Crypto.SHIB]
+        if crypto:
+            nodes += [
+                BinanceP2P(base=Crypto.BTC, quote=Fiat.RUB, payment_method=payment_method, custom_method_name=custom_method_name),
+                BinanceP2P(base=Crypto.BNB, quote=Fiat.RUB, payment_method=payment_method, custom_method_name=custom_method_name),
+                BinanceP2P(base=Crypto.ETH, quote=Fiat.RUB, payment_method=payment_method, custom_method_name=custom_method_name),
+                BinanceP2P(base=Crypto.SHIB, quote=Fiat.RUB, payment_method=payment_method, custom_method_name=custom_method_name),
+            ]
 
-        for base in symbols:
-            node = BinanceP2P(base=base, quote=Fiat.RUB, payment_method=payment_method)
-            nodes[node.repr] = node
-
-        return nodes
+        return {node.repr: node for node in nodes}
 
     def get_binance_p2p_kazakhstan(self, crypto: bool, payment_method: BPM):
         nodes = {}
@@ -276,13 +312,13 @@ class RouteGenerator:
         nodes = [GarantexExchange(base=Stable.USDT, quote=Fiat.RUB),
                  GarantexExchange(base=Stable.DAI, quote=Fiat.RUB),
                  GarantexExchange(base=Stable.USDC, quote=Fiat.RUB),
-                 GarantexExchange(base=Stable.USDT, quote=Stable.USDC)]
+                 GarantexExchange(base=Stable.USDC, quote=Stable.USDT)]
         if crypto:
             nodes += [
                 GarantexExchange(base=Crypto.BTC, quote=Fiat.RUB),
                 GarantexExchange(base=Crypto.ETH, quote=Fiat.RUB),
                 GarantexExchange(base=Crypto.BTC, quote=Stable.USDT),
-                GarantexExchange(base=Crypto.BTC, quote=Crypto.ETH),
+                GarantexExchange(base=Crypto.ETH, quote=Crypto.BTC),
                 GarantexExchange(base=Crypto.ETH, quote=Stable.USDT),
             ]
         return {node.repr: node for node in nodes}
