@@ -9,8 +9,8 @@ from arbitrage_helper.currency import *
 
 
 class GenericNode:
-    _buy_price = 9223372036854775807  # I buy, someone sells to me, min price - 40000, ask
-    _sell_price = 0  # I sell, someone buys from me, max price - 39000, bid
+    _buy_price = 9223372036854775807  # Min price, e.g. 40000, ask
+    _sell_price = 0  # Max price, e.g. 39000, bid
 
     def __init__(self, base: CEnum, quote: CEnum, trader_mode: bool = False):
         self.trader_mode = trader_mode
@@ -31,8 +31,16 @@ class GenericNode:
         raise NotImplementedError
 
     @property
+    def invalid_buy_price(self):
+        return self._buy_price == self.__class__._buy_price or self._buy_price == 0.0
+
+    @property
+    def invalid_sell_price(self):
+        return self._sell_price == self.__class__._sell_price
+
+    @property
     def invalid(self):
-        return self._buy_price == self.__class__._buy_price and self._sell_price == self.__class__._sell_price or self._buy_price == 0.0
+        return self.invalid_buy_price and self.invalid_sell_price
 
     @property
     def buy_price(self) -> float:

@@ -22,20 +22,28 @@ class BPM(Enum):  # Binance Payment Method
     AltynBank = "AltynBank"
     JysanBank = "JysanBank"
 
+    def __str__(self):
+        return str(self.value)
+
 
 class BinanceP2P(GenericNode):
     def __init__(self, base: CEnum, quote: CEnum, payment_method: Union[BPM, Iterable[BPM]],
-                 trader_mode: bool = False, merchant_check: bool = False):
+                 custom_method_name: Optional[str] = None, trader_mode: bool = False, merchant_check: bool = False):
         super().__init__(base, quote, trader_mode)
         if isinstance(payment_method, BPM):
             self.payment_method = (payment_method, )
         else:
             self.payment_method = tuple(payment_method)
+        self.custom_method_name = custom_method_name
         self.merchant_check = merchant_check
 
     @property
     def repr(self):
-        return f"BinanceP2P {','.join(map(str, self.payment_method))} {self.base.repr}/{self.quote.repr}"
+        if self.custom_method_name is not None:
+            method_name = self.custom_method_name
+        else:
+            method_name = ','.join(map(str, self.payment_method))
+        return f"BinanceP2P {method_name} {self.base.repr}/{self.quote.repr}"
 
     def parse(self):
         self._buy_price = self._parse_buy_price(base=self.base, quote=self.quote)
