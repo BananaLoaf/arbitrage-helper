@@ -93,6 +93,7 @@ class RouteGenerator:
         ################################################################
         # Kazakhstan
         nodes.update(self.get_binance_p2p_kazakhstan(crypto=crypto, payment_method=BPM.JysanBank))
+        nodes.update(self.get_freedom_finance_bank())
 
         ################################################################
         # Indonesia
@@ -211,6 +212,16 @@ class RouteGenerator:
             nodes[node.repr] = node
 
         return nodes
+
+    def get_freedom_finance_bank(self) -> Dict[str, GenericNode]:
+        nodes = [
+            FreedomFinance(base=Fiat.USD, quote=Fiat.RUB),
+            FreedomFinance(base=Fiat.EUR, quote=Fiat.USD),
+            FreedomFinance(base=Fiat.EUR, quote=Fiat.RUB),
+            FreedomFinance(base=Fiat.RUB, quote=Fiat.KZT),
+            FreedomFinance(base=Fiat.EUR, quote=Fiat.KZT),
+        ]
+        return {node.repr: node for node in nodes}
 
     def get_paysera(self) -> Dict[str, GenericNode]:
         nodes = [

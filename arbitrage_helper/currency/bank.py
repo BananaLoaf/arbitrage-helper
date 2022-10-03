@@ -11,6 +11,7 @@ class Fiat(CEnum):
     IDR = "IDR"
     UZS = "UZS"
     TJS = "TJS"
+    CNY = "CNY"
 
 
 # class TinkoffBank(CEnum):

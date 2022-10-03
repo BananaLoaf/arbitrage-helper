@@ -6,16 +6,14 @@ class Arbitrage:
     def __init__(self):
         pass
 
-    def run(self, max_size: int, start_balance: Balance, crypto: bool):
+    def run(self, size: int, start_balance: Balance, crypto: bool):
         ################################################################
         # Prep data
         route_gen = RouteGenerator()
         nodes = route_gen.all_nodes(crypto=crypto)
         nodes = route_gen.parse_nodes(nodes=nodes, workers=25)
 
-        routes = []
-        for size in range(2, max_size+1):
-            routes += list(route_gen.smartgen_loop_routes(nodes=nodes, size=size, currency=start_balance.currency))
+        routes = list(route_gen.smartgen_loop_routes(nodes=nodes, size=size, currency=start_balance.currency))
 
         ################################################################
         # Print profitable
