@@ -6,7 +6,7 @@ from arbitrage_helper.currency import CEnum
 
 
 ################################################################
-class Tinkoff(GenericNode):
+class RUTinkoff(GenericNode):
     def __init__(self, base: CEnum, quote: CEnum):
         super().__init__(base, quote, trader_mode=False)
 
@@ -36,7 +36,7 @@ class Jusan(GenericNode):
                 break
 
 
-class FreedomFinance(GenericNode):
+class KZFreedomFinance(GenericNode):
     def __init__(self, base: CEnum, quote: CEnum):
         super().__init__(base, quote, trader_mode=False)
 

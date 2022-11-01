@@ -1,2 +1,1 @@
-PACKAGE_NAME = "arbitrage_helper"
-__version__ = "1.0"
+"""Helper package for searching and checking arbitrage opportunities."""

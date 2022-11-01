@@ -1,4 +1,5 @@
 from arbitrage_helper.node import *
+from arbitrage_helper.node_holder import NodeHolder
 from arbitrage_helper.route import Route, RouteGenerator
 
 
@@ -10,7 +11,7 @@ class Arbitrage:
         ################################################################
         # Prep data
         route_gen = RouteGenerator()
-        nodes = route_gen.all_nodes(crypto=crypto)
+        nodes = NodeHolder().all_nodes(crypto=crypto)
         nodes = route_gen.parse_nodes(nodes=nodes, workers=25)
 
         routes = list(route_gen.smartgen_loop_routes(nodes=nodes, size=size, currency=start_balance.currency))

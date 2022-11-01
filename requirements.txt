@@ -1,5 +1,0 @@
-selenium
-tqdm
-requests
-lxml
-python-decouple
