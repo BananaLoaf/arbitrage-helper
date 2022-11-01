@@ -235,10 +235,14 @@ class RouteGenerator:
         return {node.repr: node for node in nodes}
 
     def get_paysend(self) -> Dict[str, GenericNode]:
-        nodes = [Paysend_KZTIDR(),
-                 Paysend_RUBUZS(),
-                 Paysend_RUBTJS(),
-                 Paysend_UZSKZT()]
+        nodes = [
+            Paysend_KZTIDR(),
+            Paysend_KZTUSD_KZ(),
+            Paysend_RUBUZS(),
+            Paysend_RUBTJS(),
+            Paysend_UZSKZT(),
+            Paysend_UZSUSD_KZ(),
+        ]
         return {node.repr: node for node in nodes}
 
     def get_binance_p2p_russia(self, crypto: bool, payment_method: Union[Iterable[BPM], BPM],
